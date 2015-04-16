@@ -7,7 +7,8 @@ output:
 ---
 ## Libraries
 
-```{r libraries, echo=TRUE}
+
+```r
 library(dplyr)
 library(ggplot2)
 library(lattice)
@@ -29,7 +30,8 @@ the GitHub repository also contains the dataset for the assignment so you do not
 
 
 
-```{r loading, echo=TRUE}
+
+```r
 ## Zipped data file is part of forked repository, so don't need to download it 
 #fileUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 #download.file(fileUrl,destfile="activity.zip",method="curl")
@@ -38,13 +40,43 @@ unzip("activity.zip")
 df <- read.csv("activity.csv")
 
 message('Original size of data')
-str(df)
+```
 
+```
+## Original size of data
+```
+
+```r
+str(df)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+```r
 #get rid of NaNs
 df_clean <- df[complete.cases(df), ]
 
 message('Cleaned size of data')
+```
+
+```
+## Cleaned size of data
+```
+
+```r
 str(df_clean)
+```
+
+```
+## 'data.frame':	15264 obs. of  3 variables:
+##  $ steps   : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 2 2 2 2 2 2 2 2 2 2 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
 ```
 
 ## Latex's definition of mean(x), because I want to see that Latex works.
@@ -57,20 +89,20 @@ For this part of the assignment, you can ignore the missing values in the datase
 
     * Calculate and report the mean and median total number of steps taken per day
 
-```{r steps, echo-TRUE}
 
+```r
 df$date <- as.POSIXct(df$date)   # convert sytle of date
 
 df_clean  %>%  group_by(date) %>%    
  			summarise(totSteps=sum(steps)) -> df_byDates
 
 ymax = max(df_byDates$totSteps)
-
 ```
 
 Now for the plot.
 
-```{r steps_plot} 
+
+```r
    # echo=TRUE breaks the plot. Error in R markdown.
 
 qplot(date, totSteps, data=df_byDates, 
@@ -79,12 +111,13 @@ qplot(date, totSteps, data=df_byDates,
     xlab="Date", ylab="Total Number of Steps",
     ylim = c(0, ymax),
 	main="")
-
 ```
 
-* Mean number of steps per day is `r mean(df_byDates$totSteps)`.
+![plot of chunk steps_plot](figure/steps_plot-1.png) 
 
-* Median number of steps per day is `r median(df_byDates$totSteps)`.
+* Mean number of steps per day is 1.0766189 &times; 10<sup>4</sup>.
+
+* Median number of steps per day is 10765.
 
 
 ## What is the average daily activity pattern?
@@ -93,9 +126,8 @@ qplot(date, totSteps, data=df_byDates,
 
     * Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
-```{r daily, echo=TRUE}
 
-
+```r
 df_clean  %>%  summarise(meanSteps=mean(steps)) -> interval_mean
 
 df_clean  %>%  group_by(interval) %>%    
@@ -106,11 +138,12 @@ df_clean  %>%  group_by(interval) %>%
 
 whichMax <- which.max( df_maxByIntervals$maxSteps )  # index of the max
 ```
-*The interval at `r 5*(whichMax-1)` to `r 5*whichMax` minutes has 
-the maximum number of steps (`r df_byIntervals$meanSteps[whichMax]`), 
+*The interval at 375 to 380 minutes has 
+the maximum number of steps (63.4528302), 
 assuming averaged across all the days in the dataset.*
 
-```{r daily_plot}
+
+```r
 qplot( interval, steps, data=df_clean, 
     alpha = 0.75, 
     type = 'l',   # line type
@@ -119,8 +152,9 @@ qplot( interval, steps, data=df_clean,
     main="") +
     geom_hline(aes(yintercept=df_maxByIntervals$maxSteps[whichMax], 
                         color="orange"))
-
 ```
+
+![plot of chunk daily_plot](figure/daily_plot-1.png) 
 
 ## Imputing missing values
     Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
@@ -134,14 +168,15 @@ qplot( interval, steps, data=df_clean,
     -    Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 *I calculate the number of rows with missing values (NA) as 
-`r nrow(df) - nrow(df_clean)` out of `r nrow(df)` original rows*, which is 
-`r 100*(nrow(df) - nrow(df_clean))/nrow(df)`%.
+2304 out of 17568 original rows*, which is 
+13.1147541%.
 
  As for a strategy to fill up missing data, it is generally A BAD IDEA!
  It is extrapolation, at best. One might put in FAKE data based on what 
  you might expect to find, say the average value, or a low baseline like times of low activity. Low activity might be occasional squirming while sleeping which might get recorded as a few steps, or recordings while watching a movie. Which (average or baseline) is a better might depend on what time of day the missing records are.  Actually, if one is good at Bayesian analysis, I would bet that the baseline would be a good choice of prior and that the missing data can just be ignored. So to be contrarian, *I chose to use the average from midnight to 5 AM to (under protest) fill up the missing data.* 
  
-```{r baseline, echo=TRUE}
+
+```r
 df_clean %>%  summarise(meanSteps=mean(steps[interval<500])) -> 
     steps_baseline
 
@@ -156,33 +191,36 @@ mean24hr <- steps_mean$meanSteps[1]
 df -> df_impute
 # replace NA's with value steps_baseline
 df_impute$steps[is.na(df_impute$steps)] <- meanNight
-
 ```
 
- *I replace the missing values with a value of `r meanNight`*
+ *I replace the missing values with a value of 0.658805*
  This corresponds to a mean number of steps per interval between midnight and 5 AM 
- (500 on the graph's x axis) of `r meanNight`,
- compared to an overall mean of `r mean24hr`. 
+ (500 on the graph's x axis) of 0.658805,
+ compared to an overall mean of 37.3825996. 
  Only 2/3's of a step per interval during the nighttime hours. Very small!
 
 
 
-```{r imputing1, echo=TRUE}
+
+```r
 df_impute  %>%  group_by(date) %>%    
      		summarise(totSteps=sum(steps)) -> df_imputeByDates
 ```
 
-```{r imputing2}
+
+```r
 qplot(date, totSteps, data=df_imputeByDates, 
     geom = "histogram",
     stat="identity",
     xlab="Date", ylab="Total Number of Steps",
     ylim = c(0, ymax),
     main="")
-
 ```
 
-```{r imputing3, echo=TRUE}
+![plot of chunk imputing2](figure/imputing2-1.png) 
+
+
+```r
 mean_percentChange <- 100*
     (mean(df_imputeByDates$totSteps) - mean(df_byDates$totSteps)) / 
     mean(df_byDates$totSteps)
@@ -190,12 +228,11 @@ mean_percentChange <- 100*
 median_percentChange <- 100*
     (median(df_imputeByDates$totSteps) - median(df_byDates$totSteps)) / 
     median(df_byDates$totSteps)
-
 ```
 
-* Imputed data: Mean number of steps per day is `r mean(df_imputeByDates$totSteps)`;  cleaned, unimputed mean was `r mean(df_byDates$totSteps)`.  By filling missing data, the mean has changed by `r mean_percentChange` percent.
+* Imputed data: Mean number of steps per day is 9379.1128982;  cleaned, unimputed mean was 1.0766189 &times; 10<sup>4</sup>.  By filling missing data, the mean has changed by -12.8836288 percent.
 
-* Imputed data: Median number of steps per day is `r median(df_imputeByDates$totSteps)`; cleaned, unimputed median was `r median(df_byDates$totSteps)`.  By filling missing data, the median has changed by `r median_percentChange` percent.
+* Imputed data: Median number of steps per day is 1.0395 &times; 10<sup>4</sup>; cleaned, unimputed median was 10765.  By filling missing data, the median has changed by -3.4370646 percent.
 
 Note: Since I filled missing data with a low estimate, the changes in the
 mean and median are probably exaggerated compared to using the mean or median for the filling value. 
@@ -221,7 +258,8 @@ mean and median are probably exaggerated compared to using the mean or median fo
 
     
 
-```{r weekends3, echo-TRUE}
+
+```r
 weekwhat <- weekdays(as.Date(df_impute$date))
 df_impute$weekCat <- factor(rep(NA, length(nrow(df_impute)) ), 
                  levels=c("weekday", "weekend") )
@@ -232,7 +270,8 @@ df_impute  %>%  group_by(interval, weekCat) %>%
              summarize(meanSteps=mean(steps)) -> df_imputebyIntervals
 ```
 
-```{r weekends4}
+
+```r
 xyplot(
     df_imputebyIntervals$meanSteps ~ df_imputebyIntervals$interval |df_imputebyIntervals$weekCat,
     type = 'l',   # line? type
@@ -240,3 +279,5 @@ xyplot(
     ylab = 'Mean Number of Steps Taken per 5 min' 
     )
 ```
+
+![plot of chunk weekends4](figure/weekends4-1.png) 
